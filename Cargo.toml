@@ -1,0 +1,17 @@
+[package]
+name = "rust-routerify-aws-lambda-quickstart"
+version = "0.1.0"
+authors = ["Sean Pianka <pianka@eml.cc>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+routerify = "1.1.4"
+routerify-cors = "1.1"
+hyper = "0.13.6"
+tokio = { version = "0.2", features = ["full"] }
+lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime/", branch = "master"}
+serde = { version = "1.0", features = ["std", "derive"] }
+serde_json = "1.0"
+rand = "0.7.3"
