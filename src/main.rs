@@ -27,7 +27,7 @@ async fn start(req: lambda_http::Request) -> Result<impl IntoResponse, AsyncErro
     let body = match body {
         lambda_http::Body::Empty => hyper::Body::empty(),
         lambda_http::Body::Text(t) => hyper::Body::from(t.into_bytes()),
-        lambda_http::Body::Binary(b) => hyper::Body::from(b.clone()),
+        lambda_http::Body::Binary(b) => hyper::Body::from(b),
     };
     // Prefix the local Routerify's address to the path of the incoming Lambda request.
     let uri = format!("http://{}{}", serve.addr(), parts.uri.path());
