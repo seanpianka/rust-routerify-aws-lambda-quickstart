@@ -5,7 +5,7 @@ A quickstart for setting up an HTTP API in AWS Lambda / API Gateway using Rust v
 
 Below are a description of the steps to route and serve HTTP requests from AWS API Gateway and AWS Lambda to a Rust application (using a Rust HTTP routing library).
 
-### The Steps
+### The Steps Described
 
 Import all this important stuff:
 
@@ -103,7 +103,7 @@ Yes... yes, it is.
 ## What is Routerify?
 
 
-### More Steps
+### More Steps Described
 
 Create a builder function for "building" your Routerify router:
 
