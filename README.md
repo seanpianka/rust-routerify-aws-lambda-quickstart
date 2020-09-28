@@ -138,7 +138,9 @@ struct State {
 
 Create an async handler function for the `GET /data` endpoint of our API. 
 
-Note about the return type: this API always returns a Result, thus the error is marked as [Infallible](https://doc.rust-lang.org/beta/std/convert/enum.Infallible.html). However, Hyper's type definitions still require a Result type to be returned. When a request must indicate success or failure, 
+Note about the return type: this API always returns a Result, thus the error is marked as [Infallible](https://doc.rust-lang.org/beta/std/convert/enum.Infallible.html). However, Hyper's type definitions still require a Result type to be returned.
+
+Use the appropriate HTTP status code and always return an `Ok(..)` response, where the body and headers are updated with the appropriate data.
 
 ```rust
 async fn get_count(req: Request<Body>) -> Result<Response<Body>, Infallible> {
