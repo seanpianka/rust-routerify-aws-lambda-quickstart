@@ -114,7 +114,7 @@ Yes... yes, it is.
 
 ## What is Routerify?
 
-Routerify is a modular implementation of an HTTP router.
+[Routerify](https://github.com/routerify/routerify) is a modular implementation of an HTTP router.
 
 Routerify's main features:
 
