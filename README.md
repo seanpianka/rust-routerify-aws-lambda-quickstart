@@ -105,15 +105,16 @@ Yes... yes, it is.
 Routerify is a modular implementation of an HTTP router.
 
 Routerify's main features:
-📡 Allows defining complex routing logic.
-🔨 Provides middleware support.
-🌀 Supports Route Parameters.
-🚀 Fast as it's using `RegexSet` to match routes.
-🍺 It supports any response body type as long as it implements the `HttpBody` trait.
-❗ Provides a flexible error handling strategy.
-💁 Provides WebSocket support out of the box.
-🔥 Allows data/state sharing across the route and middleware handlers.
-🍗 Well documented with examples
+
+* 📡 Allows defining complex routing logic.
+* 🔨 Provides middleware support.
+* 🌀 Supports Route Parameters.
+* 🚀 Fast as it's using `RegexSet` to match routes.
+* 🍺 It supports any response body type as long as it implements the `HttpBody` trait.
+* ❗ Provides a flexible error handling strategy.
+* 💁 Provides WebSocket support out of the box.
+* 🔥 Allows data/state sharing across the route and middleware handlers.
+* 🍗 Well documented with examples
 
 
 ### More Steps Described
