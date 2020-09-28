@@ -5,7 +5,19 @@ A quickstart for setting up an HTTP API in AWS Lambda / API Gateway using Rust v
 
 Below are a description of the steps to route and serve HTTP requests from AWS API Gateway and AWS Lambda to a Rust application (using a Rust HTTP routing library).
 
-### The Steps Described
+### Why?
+
+For most usecases, serving a web API with a traditional 24x7 hosting server _works_. However, there are usecases without specialized hardware requirements, which create an opportunity to reduce costs through the use of host-agnostic computing platforms (i.e. [Function-as-a-Service](https://en.wikipedia.org/wiki/Function_as_a_service) platforms like AWS Lambda).
+
+### Why Rust?
+
+Rust is an expressive, fast, and reliable language to use for building any applications, once a point in the learning curve has been reached... It has a number of key benefits over other languages for greenfield projects:
+
+* Its type system allows for concise and expressive modeling of business domains and their invariants,
+* C-level speeds can be achieved with a memory-safe implementation for all of your projet's technical details, 
+* and a fast start-up time along with low runtime memory overhead allows us to take the most advantage of AWS Lambda's pricing at scale.
+
+## The Steps Described
 
 Import all this important stuff:
 
