@@ -135,3 +135,68 @@ async fn get_count(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         .body(Body::from(format!("Count: {}", state.count))))
 }
 ```
+
+## The Glue Between AWS Lambda and Routerify
+
+In our `start` entrypoint handler, we setup a server in the AWS Lambda instance with our Routerify server:
+
+```rust
+    // Generate some random state and build the HTTP router.
+    let router = router(State{ count: rand::thread_rng().gen::<u8>() });
+
+    // Start a internal Routerify server with the above router.
+    let serve = serve(router).await;
+```
+
+This function `serve` will bind a `routerify::Router` to the instance's localhost:
+
+```rust
+impl Serve {
+    pub fn addr(&self) -> SocketAddr {
+        self.addr
+    }
+
+    pub fn shutdown(self) {
+        self.tx.send(()).unwrap();
+    }
+}
+
+pub async fn serve<B, E>(router: Router<B, E>) -> Serve
+    where
+        B: hyper::body::HttpBody + Send + Sync + Unpin + 'static,
+        E: std::error::Error + Send + Sync + Unpin + 'static,
+        <B as hyper::body::HttpBody>::Data: Send + Sync + 'static,
+        <B as hyper::body::HttpBody>::Error: std::error::Error + Send + Sync + 'static,
+{
+    let service = RouterService::new(router).unwrap();
+    let server = Server::bind(&([127, 0, 0, 1], 0).into()).serve(service);
+    let addr = server.local_addr();
+
+    let (tx, rx) = oneshot::channel::<()>();
+
+    let graceful_server = server.with_graceful_shutdown(async {
+        rx.await.unwrap();
+    });
+
+    tokio::spawn(async move {
+        graceful_server.await.unwrap();
+    });
+
+    Serve { addr, tx }
+}
+```
+
+We can then serve the request to the server's local address, await the response, then shutdown the Routerify server (as we only serve one request per AWS Lambda instance).
+
+```rust
+    // Prefix the local Routerify's address to the path of the incoming Lambda request.
+    let uri = format!("http://{}{}", serve.addr(), parts.uri.path());
+    parts.uri = hyper::Uri::from_str(uri.as_str()).unwrap();
+    let req = hyper::Request::from_parts(parts, body);
+
+    // Send the request to the routerify server and return the response.
+    let resp = Client::new().request(req).await.unwrap();
+
+    // Shutdown the Routerify server.
+    serve.shutdown();
+```
