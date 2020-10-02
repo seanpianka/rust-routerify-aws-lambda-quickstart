@@ -13,7 +13,7 @@ For most use cases, serving a web API with a traditional 24x7 hosting server _wo
 
 Rust is an expressive, fast, and reliable language to use for building any applications, once a point in the learning curve has been reached... It has a number of key benefits over other languages for greenfield projects:
 
-* Its type system allows for concise and expressive modeling of business domains and their invariants,
+* Rust's type system allows for concise and expressive modeling of business domains and their invariants,
 * C-level speeds can be achieved with a memory-safe implementation for all of your project's technical details, 
 * and a fast start-up time along with low runtime memory overhead allows us to take the most advantage of AWS Lambda's pricing at scale.
 
@@ -32,7 +32,7 @@ use routerify::prelude::RequestExt;
 use rand::Rng;
 ```
 
-Create an entrypoint function that uses the tokio async runtime:
+Create an entrypoint function using the tokio async-runtime:
 
 ```rust
 #[tokio::main]
@@ -42,7 +42,7 @@ async fn main() -> Result<(), AsyncError> {
 }
 ```
 
-Alias the type of async errors we will be dealing with in Hyper / Routerify:
+Create an alias for the type of async errors dealt with by Hyper and Routerify:
 
 ```rust
 type AsyncError = Box<dyn std::error::Error + Sync + Send + 'static>;
@@ -110,7 +110,7 @@ async fn start(req: lambda_http::Request) -> Result<impl IntoResponse, AsyncErro
 
 ### Is it really that simple?
 
-Yes... yes, it is.
+Yes... _yes, it is_. 🤯
 
 ## What is Routerify?
 
@@ -118,15 +118,9 @@ Yes... yes, it is.
 
 Routerify's main features:
 
-* 📡 Allows defining complex routing logic.
-* 🔨 Provides middleware support.
-* 🌀 Supports Route Parameters.
-* 🚀 Fast as it's using `RegexSet` to match routes.
-* 🍺 It supports any response body type as long as it implements the `HttpBody` trait.
-* ❗ Provides a flexible error handling strategy.
-* 💁 Provides WebSocket support out of the box.
-* 🔥 Allows data/state sharing across the route and middleware handlers.
-* 🍗 Well documented with examples
+* 📡 Supports complex, parameterized routing logic with stateful handlers and middleware chains,
+* 🚀 Has a performant implementation based on [hyper](https://github.com/hyperium/hyper) and performs routing using [`RegexSet`](https://docs.rs/regex/1.3.9/regex/struct.RegexSet.html),
+* 🍗 Well documented with examples,
 
 
 ### More Steps Described
