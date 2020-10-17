@@ -15,3 +15,4 @@ lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime/", bra
 serde = { version = "1.0", features = ["std", "derive"] }
 serde_json = "1.0"
 rand = "0.7.3"
+url = { version = "2.1.1", features = ["serde"] }
