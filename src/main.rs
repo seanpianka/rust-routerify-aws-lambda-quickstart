@@ -1,23 +1,27 @@
-use hyper::{Client, Server, Request, Body, Response};
-use lambda_http::{self, handler, lambda, IntoResponse};
+use hyper::{Client, Server};
+use lambda_http::{
+    handler,
+    lambda::{self, Context},
+    Body, IntoResponse, Request, RequestExt, Response,
+};
+use rand::Rng;
 use routerify::{Router, RouterService};
+use std::convert::Infallible;
 use std::{net::SocketAddr, str::FromStr};
 use tokio::sync::oneshot;
-use std::convert::Infallible;
-use routerify::prelude::RequestExt;
-use rand::Rng;
 use url;
 
+const SERVER_ADDR: &str = "127.0.0.1:8080";
+
 #[tokio::main]
-async fn main() -> Result<(), AsyncError> {
+async fn main() -> Result<(), Error> {
     lambda::run(handler(start)).await?;
     Ok(())
 }
 
-type AsyncError = Box<dyn std::error::Error + Sync + Send + 'static>;
-const SERVER_ADDR: &str = "127.0.0.1:8080";
+type Error = Box<dyn std::error::Error + Sync + Send + 'static>;
 
-async fn start(req: lambda_http::Request) -> Result<impl IntoResponse, AsyncError> {
+async fn start(req: lambda_http::Request, _ctx: Context) -> Result<impl IntoResponse, Error> {
     // Store a copy of the query parameters, since AWS Lambda parsed these already.
     let query_params = req.query_string_parameters();
     // Convert the lambda_http::Request into a hyper::Request.

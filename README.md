@@ -19,24 +19,50 @@ Rust is an expressive, fast, and reliable language to use for building any appli
 
 ## The Steps Described
 
+Create the following `Cargo.toml`:
+
+```toml
+[package]
+authors = ["Bob Smith <bob@example.com>"]
+edition = "2018"
+name = "<your-crate-name>"
+version = "0.0.1"
+
+[dependencies]
+hyper = "0.13.6"
+# This version is pinned as there are no official releases of the Rust runtime as of 17/10/2020.
+lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime/", rev = "c36409c5"}
+rand = "0.7.3"
+routerify = "1.1.4"
+routerify-cors = "1.1"
+serde = { version = "1.0", features = ["std", "derive"] }
+serde_json = "1.0"
+tokio = { version = "0.2", features = ["full"] }
+url = { version = "2.1.1", features = ["serde"] }
+```
+
 Import all this important stuff:
 
 ```rust
-use hyper::{Client, Server, Request, Body, Response};
-use lambda_http::{self, handler, lambda, IntoResponse};
+use hyper::{Client, Server};
+use lambda_http::{
+    handler,
+    lambda::{self, Context},
+    Body, IntoResponse, Request, RequestExt, Response,
+};
+use rand::Rng;
 use routerify::{Router, RouterService};
+use std::convert::Infallible;
 use std::{net::SocketAddr, str::FromStr};
 use tokio::sync::oneshot;
-use std::convert::Infallible;
-use routerify::prelude::RequestExt;
-use rand::Rng;
+use url;
 ```
 
 Create an entrypoint function using the tokio async-runtime:
 
 ```rust
 #[tokio::main]
-async fn main() -> Result<(), AsyncError> {
+async fn main() -> Result<(), Error> {
     lambda::run(handler(start)).await?;
     Ok(())
 }
@@ -45,13 +71,13 @@ async fn main() -> Result<(), AsyncError> {
 Create an alias for the type of async errors dealt with by Hyper and Routerify:
 
 ```rust
-type AsyncError = Box<dyn std::error::Error + Sync + Send + 'static>;
+type Error = Box<dyn std::error::Error + Sync + Send + 'static>;
 ```
 
 Define a handler entrypoint for the Lambda function. The Lambda function must be integrated with a resource in API Gateway, and therefore must receive a API Gateway response and return a API Gateway response,
 
 ```rust
-async fn start(req: lambda_http::Request) -> Result<impl IntoResponse, AsyncError> {
+async fn start(req: lambda_http::Request, _ctx: Context) -> Result<impl IntoResponse, Error> {
   ...
 }
 ```
@@ -61,44 +87,67 @@ The function will:
 1. Receive an API Gateway event when the function is invoked,
 
 ```rust
-async fn start(req: lambda_http::Request) -> Result<impl IntoResponse, AsyncError> {
+async fn start(req: lambda_http::Request, _ctx: Context) -> Result<impl IntoResponse, Error> {
+    ...
+}
 ```
 
-2. Convert this event into HTTP request,
+2. Convert this event from a lambda_http::Request into a `hyper::Request`, the type expected by our routing library Routerify.
 
 ```rust
-   // Convert the lambda_http::Request into a hyper::Request.
+    // Store a copy of the query parameters, since AWS Lambda parsed these already.
+    let query_params = req.query_string_parameters();
+    // Convert the lambda_http::Request into a hyper::Request.
     let (mut parts, body) = req.into_parts();
     let body = match body {
         lambda_http::Body::Empty => hyper::Body::empty(),
         lambda_http::Body::Text(t) => hyper::Body::from(t.into_bytes()),
         lambda_http::Body::Binary(b) => hyper::Body::from(b),
+    };
+    // Prefix the local Routerify server's address to the path of the incoming Lambda request.
+    let mut uri = format!("http://{}{}", SERVER_ADDR, parts.uri.path());
+    // AWS Lambda Rust Runtime will automatically parse the query params *and* remove those
+    // query parameters from the original URI. This is fine if you're writing your logic directly
+    // in the handler function, but for passing-through to a separate router library, we need to
+    // re-url-encode the query parameters and place them back into the URI.
+    if !query_params.is_empty() {
+        uri += "?";
+        // Create a peekable iterator over the query parameters. This is used to add "&" in between
+        // each of the query parameters, but prevents adding an extraneous "&" at the end of the
+        // query parameter string.
+        let mut params = query_params.iter().peekable();
+        while let Some((key, value)) = params.next() {
+            uri += url::form_urlencoded::Serializer::new(String::new())
+                .append_pair(key, value)
+                .finish()
+                .as_str();
+            // If this is not the last parameter, append a "&" for the next parameter...
+            if params.peek().is_some() {
+                uri += "&";
+            }
+        }
+    }
+    parts.uri = match hyper::Uri::from_str(uri.as_str()) {
+        Ok(uri) => uri,
+        Err(e) => panic!(format!("failed to build uri: {:?}", e)),
+    };
+    let req = hyper::Request::from_parts(parts, body);
 ```
 
 3. Process the request through our Routerify-based HTTP program,
 
 ```rust
-    // Generate some random "backend application" state and build the HTTP router.
+    // Generate some random state and build the HTTP router.
     let router = router(State{ count: rand::thread_rng().gen::<u8>() });
-
-    // Start an internal Routerify server with the above router.
+    // Start a internal Routerify server with the above router.
     let serve = serve(router).await;
-    
-    ...
-    
-    // Prefix the local Routerify's address to the path of the incoming Lambda request.
-    let uri = format!("http://{}{}", serve.addr(), parts.uri.path());
-    parts.uri = hyper::Uri::from_str(uri.as_str()).unwrap();
-    let req = hyper::Request::from_parts(parts, body);
-
     // Send the request to the routerify server and return the response.
     let resp = Client::new().request(req).await.unwrap();
-    
     // Shutdown the Routerify server.
     serve.shutdown();
 ```
 
-4. Convert the result from an HTTP response into a API Gateway response.
+4. Convert the result from an HTTP response (`hyper::Response`) into a API Gateway response (`lambda_http::Response`).
 
 ```rust
     // Convert the hyper::Response into a lambda_http::Response.
@@ -123,7 +172,7 @@ Routerify's main features:
 * 🍗 Well documented with examples,
 
 
-### More Steps Described
+### The steps to create a Routerify server
 
 Create a builder function for "building" your Routerify router:
 
